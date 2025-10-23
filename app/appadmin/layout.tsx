@@ -1,13 +1,13 @@
-// app/dashboard/layout.tsx
 import AdminSidebar from '@/componets/AdminSidebar';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex">
-      {/* ✅ Use the AdminSidebar component */}
+      {/* Sidebar */}
       <AdminSidebar />
 
-      <main className="ml-64 flex-1 p-6 bg-gray-50 min-h-screen">
+      {/* Main content */}
+      <main className="flex-1 p-6 bg-gray-50 min-h-screen md:ml-64">
         {children}
       </main>
     </div>

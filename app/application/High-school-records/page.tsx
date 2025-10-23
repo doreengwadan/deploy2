@@ -120,95 +120,121 @@ function SubjectSelectionTable() {
   if (!token) return <p className="text-center p-6">Checking authentication...</p>;
 
   return step === "form" ? (
-    <div className="max-w-6xl mx-auto p-6 bg-white rounded shadow-md">
+    <div className="max-w-6xl mx-auto p-4 md:p-6 bg-white rounded shadow-md">
       <h2 className="text-2xl text-green-900 text-center font-bold mb-6">Subjects and Grades</h2>
-      <table className="w-full table-auto border border-gray-300">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="border p-2">Qualification</th>
-            <th className="border p-2">Centre Number</th>
-            <th className="border p-2">Exam Number</th>
-            <th className="border p-2">Subject</th>
-            <th className="border p-2">Grade</th>
-            <th className="border p-2">Year</th>
-            <th className="border p-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, i) => (
-            <tr key={i}>
-              <td className="border p-2">
-                <select value={row.qualification} onChange={(e) => handleChange(i, "qualification", e.target.value)} className="w-full border rounded p-1">
-                  <option value="">Select</option>
-                  {qualifications.map((q) => <option key={q}>{q}</option>)}
-                </select>
-              </td>
-              <td className="border p-2"><input value={row.centreNumber} onChange={(e) => handleChange(i, "centreNumber", e.target.value)} className="w-full border rounded p-1" /></td>
-              <td className="border p-2"><input value={row.examNumber} onChange={(e) => handleChange(i, "examNumber", e.target.value)} className="w-full border rounded p-1" /></td>
-              <td className="border p-2">
-                <select value={row.subject} onChange={(e) => handleChange(i, "subject", e.target.value)} className="w-full border rounded p-1">
-                  <option value="">Select subject</option>
-                  {subjectsList.map((s) => <option key={s}>{s}</option>)}
-                </select>
-              </td>
-              <td className="border p-2">
-                <select value={row.grade} onChange={(e) => handleChange(i, "grade", e.target.value)} className="w-full border rounded p-1">
-                  <option value="">Select grade</option>
-                  {grades.map((g) => <option key={g}>{g}</option>)}
-                </select>
-              </td>
-              <td className="border p-2">
-                <select value={row.year} onChange={(e) => handleChange(i, "year", e.target.value)} className="w-full border rounded p-1">
-                  <option value="">Select year</option>
-                  {years.map((y) => <option key={y}>{y}</option>)}
-                </select>
-              </td>
-              <td className="border p-2 text-center">
-                <button onClick={() => removeRow(i)} className="p-2 bg-red-600 text-white rounded"><Trash2 size={18} /></button>
-              </td>
+      
+      {/* Table Container with Horizontal Scroll */}
+      <div className="overflow-x-auto rounded-lg border border-gray-300">
+        <table className="w-full min-w-[800px] table-auto">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="border p-2 text-left">Qualification</th>
+              <th className="border p-2 text-left">Centre Number</th>
+              <th className="border p-2 text-left">Exam Number</th>
+              <th className="border p-2 text-left">Subject</th>
+              <th className="border p-2 text-left">Grade</th>
+              <th className="border p-2 text-left">Year</th>
+              <th className="border p-2 text-left">Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-      <div className="mt-4 flex justify-between">
-        <button onClick={addRow} className="flex items-center px-6 py-3 bg-blue-600 text-white rounded">
+          </thead>
+          <tbody>
+            {rows.map((row, i) => (
+              <tr key={i} className="hover:bg-gray-50">
+                <td className="border p-2">
+                  <select value={row.qualification} onChange={(e) => handleChange(i, "qualification", e.target.value)} className="w-full border rounded p-1 text-sm md:text-base">
+                    <option value="">Select</option>
+                    {qualifications.map((q) => <option key={q}>{q}</option>)}
+                  </select>
+                </td>
+                <td className="border p-2">
+                  <input value={row.centreNumber} onChange={(e) => handleChange(i, "centreNumber", e.target.value)} className="w-full border rounded p-1 text-sm md:text-base" />
+                </td>
+                <td className="border p-2">
+                  <input value={row.examNumber} onChange={(e) => handleChange(i, "examNumber", e.target.value)} className="w-full border rounded p-1 text-sm md:text-base" />
+                </td>
+                <td className="border p-2">
+                  <select value={row.subject} onChange={(e) => handleChange(i, "subject", e.target.value)} className="w-full border rounded p-1 text-sm md:text-base">
+                    <option value="">Select subject</option>
+                    {subjectsList.map((s) => <option key={s}>{s}</option>)}
+                  </select>
+                </td>
+                <td className="border p-2">
+                  <select value={row.grade} onChange={(e) => handleChange(i, "grade", e.target.value)} className="w-full border rounded p-1 text-sm md:text-base">
+                    <option value="">Select grade</option>
+                    {grades.map((g) => <option key={g}>{g}</option>)}
+                  </select>
+                </td>
+                <td className="border p-2">
+                  <select value={row.year} onChange={(e) => handleChange(i, "year", e.target.value)} className="w-full border rounded p-1 text-sm md:text-base">
+                    <option value="">Select year</option>
+                    {years.map((y) => <option key={y}>{y}</option>)}
+                  </select>
+                </td>
+                <td className="border p-2 text-center">
+                  <button onClick={() => removeRow(i)} className="p-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors">
+                    <Trash2 size={16} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mt-4 flex flex-col md:flex-row justify-between gap-4">
+        <button onClick={addRow} className="flex items-center justify-center px-4 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
           <Plus className="mr-2" size={18}/> Add New Record
         </button>
-        <Button2 onClick={handleSave} disabled={loading} className="w-1/5 py-2 bg-green-600 text-white rounded">
+        <Button2 onClick={handleSave} disabled={loading} className="px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700 transition-colors">
           {loading ? "Saving..." : "Save & Next"}
         </Button2>
       </div>
+
+      {/* Mobile scroll hint */}
+      <div className="md:hidden text-center mt-2">
+        <p className="text-xs text-gray-500">← Scroll horizontally to see all columns →</p>
+      </div>
     </div>
   ) : (
-    <div className="max-w-4xl mx-auto p-6 bg-white rounded shadow-md">
+    <div className="max-w-6xl mx-auto p-4 md:p-6 bg-white rounded shadow-md">
       <h2 className="text-2xl text-green-900 font-bold text-center mb-6">Review Your Details</h2>
-      <table className="w-full border border-gray-300">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="border p-2">Qualification</th>
-            <th className="border p-2">Centre</th>
-            <th className="border p-2">Exam No</th>
-            <th className="border p-2">Subject</th>
-            <th className="border p-2">Grade</th>
-            <th className="border p-2">Year</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r, i) => (
-            <tr key={i}>
-              <td className="border p-2">{r.qualification}</td>
-              <td className="border p-2">{r.centreNumber}</td>
-              <td className="border p-2">{r.examNumber}</td>
-              <td className="border p-2">{r.subject}</td>
-              <td className="border p-2">{r.grade}</td>
-              <td className="border p-2">{r.year}</td>
+      
+      {/* Review Table Container with Horizontal Scroll */}
+      <div className="overflow-x-auto rounded-lg border border-gray-300">
+        <table className="w-full min-w-[700px] border border-gray-300">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="border p-2 text-left">Qualification</th>
+              <th className="border p-2 text-left">Centre</th>
+              <th className="border p-2 text-left">Exam No</th>
+              <th className="border p-2 text-left">Subject</th>
+              <th className="border p-2 text-left">Grade</th>
+              <th className="border p-2 text-left">Year</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-      <div className="mt-6 flex justify-between">
-        <button onClick={() => setStep("form")} className="px-6 py-3 bg-yellow-500 text-white rounded">Edit</button>
-        <button onClick={() => router.push("/application/program-selection")} className="px-6 py-3 bg-green-600 text-white rounded">Continue</button>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={i} className="hover:bg-gray-50">
+                <td className="border p-2">{r.qualification}</td>
+                <td className="border p-2">{r.centreNumber}</td>
+                <td className="border p-2">{r.examNumber}</td>
+                <td className="border p-2">{r.subject}</td>
+                <td className="border p-2">{r.grade}</td>
+                <td className="border p-2">{r.year}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mt-6 flex flex-col md:flex-row justify-between gap-4">
+        <button onClick={() => setStep("form")} className="px-6 py-3 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition-colors">Edit</button>
+        <button onClick={() => router.push("/application/program-selection")} className="px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700 transition-colors">Continue</button>
+      </div>
+
+      {/* Mobile scroll hint */}
+      <div className="md:hidden text-center mt-2">
+        <p className="text-xs text-gray-500">← Scroll horizontally to see all columns →</p>
       </div>
     </div>
   );
@@ -251,51 +277,76 @@ function OtherQualificationsTable({ type }: { type: string }) {
     }
   };
 
+  // Calculate minimum width based on type
+  const minWidth = type === "teacher" ? "min-w-[900px]" : "min-w-[600px]";
+
   return (
-    <div className="max-w-5xl mx-auto p-6 bg-white rounded shadow-md">
+    <div className="max-w-6xl mx-auto p-4 md:p-6 bg-white rounded shadow-md">
       <h2 className="text-2xl font-bold text-green-900 text-center mb-6">
         {type === "teacher" ? "Teaching Qualifications" : "Other Qualifications"}
       </h2>
-      <table className="w-full table-auto border border-gray-300">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="border p-2">Qualification</th>
-            <th className="border p-2">Award Institution</th>
-            <th className="border p-2">Year</th>
-            {type === "teacher" && <th className="border p-2">Teaching Subject</th>}
-            {type === "teacher" && <th className="border p-2">Work Experience</th>}
-            <th className="border p-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, i) => (
-            <tr key={i}>
-              <td className="border p-2"><input value={row.qualification} onChange={(e) => handleChange(i, "qualification", e.target.value)} className="w-full border rounded p-1" /></td>
-              <td className="border p-2"><input value={row.institution} onChange={(e) => handleChange(i, "institution", e.target.value)} className="w-full border rounded p-1" /></td>
-              <td className="border p-2">
-                <select value={row.year} onChange={(e) => handleChange(i, "year", e.target.value)} className="w-full border rounded p-1">
-                  <option value="">Select</option>
-                  {years.map((y) => <option key={y}>{y}</option>)}
-                </select>
-              </td>
-              {type === "teacher" && (
-                <>
-                  <td className="border p-2"><input value={row.teachingSubject || ""} onChange={(e) => handleChange(i, "teachingSubject", e.target.value)} className="w-full border rounded p-1" /></td>
-                  <td className="border p-2"><input value={row.workExperience || ""} onChange={(e) => handleChange(i, "workExperience", e.target.value)} className="w-full border rounded p-1" placeholder="e.g. 5 years" /></td>
-                </>
-              )}
-              <td className="border p-2 text-center">
-                <button onClick={() => removeRow(i)} className="p-2 bg-red-600 text-white rounded"><Trash2 size={18} /></button>
-              </td>
+      
+      {/* Table Container with Horizontal Scroll */}
+      <div className="overflow-x-auto rounded-lg border border-gray-300">
+        <table className={`w-full ${minWidth} table-auto`}>
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="border p-2 text-left">Qualification</th>
+              <th className="border p-2 text-left">Award Institution</th>
+              <th className="border p-2 text-left">Year</th>
+              {type === "teacher" && <th className="border p-2 text-left">Teaching Subject</th>}
+              {type === "teacher" && <th className="border p-2 text-left">Work Experience</th>}
+              <th className="border p-2 text-left">Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-      <div className="mt-4 flex justify-between">
-        <button onClick={addRow} className="flex items-center px-6 py-3 bg-blue-600 text-white rounded"><Plus className="mr-2" size={18}/> Add</button>
-        <Button2 onClick={handleSave} disabled={loading} className="w-1/4 py-2 bg-green-600 text-white rounded">
+          </thead>
+          <tbody>
+            {rows.map((row, i) => (
+              <tr key={i} className="hover:bg-gray-50">
+                <td className="border p-2">
+                  <input value={row.qualification} onChange={(e) => handleChange(i, "qualification", e.target.value)} className="w-full border rounded p-1 text-sm md:text-base" />
+                </td>
+                <td className="border p-2">
+                  <input value={row.institution} onChange={(e) => handleChange(i, "institution", e.target.value)} className="w-full border rounded p-1 text-sm md:text-base" />
+                </td>
+                <td className="border p-2">
+                  <select value={row.year} onChange={(e) => handleChange(i, "year", e.target.value)} className="w-full border rounded p-1 text-sm md:text-base">
+                    <option value="">Select</option>
+                    {years.map((y) => <option key={y}>{y}</option>)}
+                  </select>
+                </td>
+                {type === "teacher" && (
+                  <>
+                    <td className="border p-2">
+                      <input value={row.teachingSubject || ""} onChange={(e) => handleChange(i, "teachingSubject", e.target.value)} className="w-full border rounded p-1 text-sm md:text-base" />
+                    </td>
+                    <td className="border p-2">
+                      <input value={row.workExperience || ""} onChange={(e) => handleChange(i, "workExperience", e.target.value)} className="w-full border rounded p-1 text-sm md:text-base" placeholder="e.g. 5 years" />
+                    </td>
+                  </>
+                )}
+                <td className="border p-2 text-center">
+                  <button onClick={() => removeRow(i)} className="p-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors">
+                    <Trash2 size={16} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mt-4 flex flex-col md:flex-row justify-between gap-4">
+        <button onClick={addRow} className="flex items-center justify-center px-4 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
+          <Plus className="mr-2" size={18}/> Add
+        </button>
+        <Button2 onClick={handleSave} disabled={loading} className="px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700 transition-colors">
           {loading ? "Saving..." : "Save & Next"}
         </Button2>
+      </div>
+
+      {/* Mobile scroll hint */}
+      <div className="md:hidden text-center mt-2">
+        <p className="text-xs text-gray-500">← Scroll horizontally to see all columns →</p>
       </div>
     </div>
   );

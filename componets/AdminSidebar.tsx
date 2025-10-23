@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -14,7 +14,6 @@ import {
   X,
 } from 'lucide-react';
 
-// ✅ Nav Items for Admin
 const adminNavItems = [
   { label: 'Dashboard', href: '/appadmin', icon: Home },
   { label: 'Applicants', href: '/appadmin/applicants', icon: Users },
@@ -27,26 +26,31 @@ const adminNavItems = [
 export default function AdminSidebar() {
   const [isOpen, setIsOpen] = useState(false);
 
+  // Prevent body scroll when sidebar is open on mobile
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+  }, [isOpen]);
+
   return (
-    <aside className="w-64 fixed top-0 left-0 h-screen bg-white shadow-md border-r border-gray-200 py-2 overflow-y-auto z-50">
-      {/* Mobile Toggle */}
+    <>
+      {/* Mobile Toggle Button */}
       <button
-        className="md:hidden fixed top-4 right-4 z-[60] bg-white p-2 rounded shadow"
+        className="md:hidden fixed top-4 right-4 z-50 bg-white p-2 rounded shadow"
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Toggle Sidebar"
       >
-        {isOpen ? (
-          <X className="w-6 h-6 text-green-800" />
-        ) : (
-          <Menu className="w-6 h-6 text-green-800" />
-        )}
+        {isOpen ? <X className="w-6 h-6 text-green-800" /> : <Menu className="w-6 h-6 text-green-800" />}
       </button>
 
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-10 left-0 h-screen w-64 bg-white shadow-md border-r border-gray-200 px-4 pt-0
-          overflow-y-auto z-40
+          fixed top-0 left-0 h-screen w-64 bg-white shadow-md border-r border-gray-200 px-4 pt-4
+          overflow-y-auto z-50
           transform transition-transform duration-300
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
           md:translate-x-0
@@ -63,12 +67,8 @@ export default function AdminSidebar() {
 
         {/* Title */}
         <div className="text-center mb-4">
-          <h1 className="font-extrabold text-green-950">
-            Mzuni Admin Panel
-          </h1>
-          <p className="text-gray-500 text-sm">
-            Application Management System
-          </p>
+          <h1 className="font-extrabold text-green-950">Mzuni Admin Panel</h1>
+          <p className="text-gray-500 text-sm">Application Management System</p>
         </div>
 
         <hr className="mb-3" />
@@ -88,6 +88,6 @@ export default function AdminSidebar() {
           ))}
         </nav>
       </aside>
-    </aside>
+    </>
   );
 }
