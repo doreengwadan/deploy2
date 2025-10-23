@@ -1,14 +1,11 @@
 'use client';
-
 import { useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
 import axios from 'axios';
 import { CheckCircle, AlertCircle, FileText, User, Phone, BookOpen, ChevronRight, Download } from 'lucide-react';
 import ProgressIndicator from '@/componets/ProgressIndicator';
 import Button2 from '@/componets/Button2';
-
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api';
-
 export default function FinalSubmitPage() {
   const [data, setData] = useState({
     personal: null,
@@ -22,21 +19,17 @@ export default function FinalSubmitPage() {
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string[]>>({});
   const [progress, setProgress] = useState(0);
-
   const token = Cookies.get('token');
-
   const axiosInstance = axios.create({
     baseURL: API_BASE_URL,
     headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
   });
-
   const generateReferenceNumber = () => {
     const prefix = 'MZU';
     const date = new Date().toISOString().split('T')[0].replace(/-/g, '');
     const random = Math.random().toString(36).substring(2, 8).toUpperCase();
     return `${prefix}-${date}-${random}`;
   };
-
   // Simulate Google-style progress bar
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -52,7 +45,6 @@ export default function FinalSubmitPage() {
     }
     return () => clearInterval(interval);
   }, [loading]);
-
   useEffect(() => {
     const fetchData = async () => {
       if (!token) {
@@ -63,14 +55,12 @@ export default function FinalSubmitPage() {
       try {
         const userRes = await axiosInstance.get('/user');
         const applicantId = userRes.data.id;
-
         const [personalRes, contactRes, kinRes, subjectsRes] = await Promise.all([
           axiosInstance.get(`/applicants/${applicantId}`),
           axiosInstance.get(`/contacts/${applicantId}`),
           axiosInstance.get(`/applicants/${applicantId}/next-of-kin`),
           axiosInstance.get(`/subject-records`),
         ]);
-
         const subjectRecords = Array.isArray(subjectsRes.data)
           ? subjectsRes.data.map((r: any) => ({
               qualification: r.qualification || '',
@@ -81,7 +71,6 @@ export default function FinalSubmitPage() {
               year: r.year || '',
             }))
           : [];
-
         setData({
           personal: personalRes.data.data || personalRes.data,
           contact: contactRes.data.contact || contactRes.data.data || contactRes.data,
@@ -97,44 +86,36 @@ export default function FinalSubmitPage() {
         setLoading(false);
       }
     };
-
     fetchData();
   }, [token]);
-
   const handleFinalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setValidationErrors({});
     setLoading(true);
-
     if (!token) {
       setError('You must be logged in to submit.');
       setLoading(false);
       return;
     }
-
     try {
       const reference = generateReferenceNumber();
       const programmeId = data.personal?.programme_id;
-
       if (!programmeId) {
         setError('Your programme information is missing. Please update your profile.');
         setLoading(false);
         return;
       }
-
-      await axiosInstance.post('/applicant-submissions', {
+      const res = await axiosInstance.post('/applicant-submissions', {
         reference_number: reference,
         programme_id: programmeId,
       });
-      
       if (res.data.success) {
         setReferenceNumber(reference);
         setSubmitted(true);
       }
     } catch (err: any) {
       console.error('Submission error:', err);
-
       if (err.response?.status === 422 && err.response.data.details) {
         setValidationErrors(err.response.data.details);
         setError('Please fix the highlighted validation errors.');
@@ -149,11 +130,9 @@ export default function FinalSubmitPage() {
       setLoading(false);
     }
   };
-
   const handlePrintApplication = () => {
     window.print();
   };
-
   return (
     <>
       {/* Google-style top loading bar */}
@@ -161,7 +140,6 @@ export default function FinalSubmitPage() {
         className="fixed top-0 left-0 h-1 bg-gradient-to-r from-blue-600 to-green-600 transition-all duration-300 z-50 shadow-lg"
         style={{ width: `${progress}%` }}
       />
-
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-50/30 py-8">
         <div className="max-w-4xl mx-auto px-4">
           {/* Header */}
@@ -173,9 +151,7 @@ export default function FinalSubmitPage() {
               Review your application details before final submission. Once submitted, you'll receive your reference number for payment.
             </p>
           </div>
-
           <ProgressIndicator currentStep={11} />
-
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden mt-6">
             {error && (
               <div className="bg-red-50 border-l-4 border-red-500 p-4 mx-6 mt-6 rounded-lg">
@@ -185,7 +161,6 @@ export default function FinalSubmitPage() {
                 </div>
               </div>
             )}
-
             {!submitted ? (
               <form onSubmit={handleFinalSubmit} className="p-8">
                 {/* Personal Details Card */}
@@ -226,7 +201,6 @@ export default function FinalSubmitPage() {
                     </div>
                   </div>
                 </div>
-
                 {/* Contact Details Card */}
                 <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 mb-6 border border-green-100">
                   <div className="flex items-center mb-4">
@@ -265,7 +239,6 @@ export default function FinalSubmitPage() {
                     </div>
                   </div>
                 </div>
-
                 {/* Next of Kin Card */}
                 <div className="bg-gradient-to-r from-purple-50 to-violet-50 rounded-xl p-6 mb-6 border border-purple-100">
                   <div className="flex items-center mb-4">
@@ -319,7 +292,6 @@ export default function FinalSubmitPage() {
                     </div>
                   )}
                 </div>
-
                 {/* Subjects Card */}
                 <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl p-6 mb-8 border border-orange-100">
                   <div className="flex items-center mb-4">
@@ -369,7 +341,6 @@ export default function FinalSubmitPage() {
                     </div>
                   )}
                 </div>
-
                 {/* Submit Button */}
                 <div className="text-center">
                   <Button2 
@@ -404,7 +375,6 @@ export default function FinalSubmitPage() {
                     Your application has been received and is now being processed. Please save your reference number for future correspondence and payment.
                   </p>
                 </div>
-
                 <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-8 max-w-md mx-auto mb-8">
                   <div className="bg-white rounded-xl p-6 border-2 border-dashed border-green-300">
                     <p className="text-sm text-gray-500 mb-2 uppercase tracking-wide font-semibold">
@@ -418,7 +388,6 @@ export default function FinalSubmitPage() {
                     Use this reference when making payment or writing your deposit slip.
                   </p>
                 </div>
-
                 <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                   <button
                     onClick={handlePrintApplication}
