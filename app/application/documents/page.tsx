@@ -12,13 +12,13 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8
 type UploadedRecord = {
   id?: number;
   applicant_id?: number;
-  msce?: string;
+  msce?: string | number;
   msce_size?: number;
   msce_name?: string;
-  id_card?: string;
+  id_card?: string | number;
   id_card_size?: number;
   id_card_name?: string;
-  payment_proof?: string;
+  payment_proof?: string | number;
   payment_proof_size?: number;
   payment_proof_name?: string;
   created_at?: string;
@@ -85,7 +85,7 @@ export default function DocumentsUploadPage() {
     }
   };
 
-  const formatFileSize = (bytes: number | undefined): string => {
+  const formatFileSize = (bytes?: number): string => {
     if (!bytes || bytes === 0) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
@@ -133,14 +133,9 @@ export default function DocumentsUploadPage() {
       const result = await res.json();
       setUploadResult(result.record);
       setSuccess('Documents uploaded successfully! Redirecting to application fees...');
-      
-      // Clear selected files
       setFiles({ msce: null, id_card: null, payment_proof: null });
-      
-      // Redirect to application fees after 2 seconds
-      setTimeout(() => {
-        router.push('/application/application-fees');
-      }, 2000);
+
+      setTimeout(() => router.push('/application/application-fees'), 2000);
       
     } catch (err: any) {
       console.error(err);
@@ -152,7 +147,6 @@ export default function DocumentsUploadPage() {
 
   const handleDeleteDocument = async (field: keyof UploadedRecord) => {
     if (!token || !uploadResult || !uploadResult[field]) return;
-
     if (!confirm('Are you sure you want to delete this document?')) return;
 
     try {
@@ -178,19 +172,16 @@ export default function DocumentsUploadPage() {
     }
   };
 
-  // Fixed file URL generation - remove /api from base URL for file access
-  const getFileUrl = (filePath: string) => {
+  const getFileUrl = (filePath?: string | number) => {
+    if (!filePath) return '';
     const baseUrl = API_BASE_URL.replace('/api', '');
     return `${baseUrl}/storage/${filePath}`;
   };
 
-  const handleDownload = async (field: string, filename: string) => {
+  const handleDownload = async (field: keyof UploadedRecord, filename: string) => {
     try {
-      // Use the API endpoint for download to ensure authentication
       const response = await fetch(`${API_BASE_URL}/applicants/documents/${field}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Authorization': `Bearer ${token}` },
       });
       
       if (response.ok) {
@@ -204,31 +195,21 @@ export default function DocumentsUploadPage() {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
       } else {
-        // Fallback to direct URL if API endpoint doesn't work
-        const fileUrl = getFileUrl(uploadResult?.[field as keyof UploadedRecord] as string);
+        const fileUrl = getFileUrl(uploadResult?.[field]);
         window.open(fileUrl, '_blank');
       }
-    } catch (error) {
-      console.error('Download error, using fallback:', error);
-      // Fallback to direct URL
-      const fileUrl = getFileUrl(uploadResult?.[field as keyof UploadedRecord] as string);
+    } catch {
+      const fileUrl = getFileUrl(uploadResult?.[field]);
       window.open(fileUrl, '_blank');
     }
   };
 
-  const handleView = (field: string) => {
-    // Try API endpoint first, then fallback to direct URL
+  const handleView = (field: keyof UploadedRecord) => {
     const apiUrl = `${API_BASE_URL}/applicants/documents/${field}`;
-    const directUrl = getFileUrl(uploadResult?.[field as keyof UploadedRecord] as string);
-    
-    // Try opening the API endpoint first
+    const directUrl = getFileUrl(uploadResult?.[field]);
     const newWindow = window.open(apiUrl, '_blank');
-    
-    // If the API endpoint fails, fallback to direct URL after a short delay
     setTimeout(() => {
-      if (newWindow && newWindow.closed) {
-        window.open(directUrl, '_blank');
-      }
+      if (newWindow && newWindow.closed) window.open(directUrl, '_blank');
     }, 1000);
   };
 
@@ -238,7 +219,7 @@ export default function DocumentsUploadPage() {
 
   const getFileName = (document: UploadedRecord, field: keyof UploadedRecord): string => {
     const nameField = `${field}_name` as keyof UploadedRecord;
-    return document[nameField] as string || `document.${getFileExtension(document[field] || '').toLowerCase()}`;
+    return (document[nameField] as string) || `document.${getFileExtension(String(document[field] || '')).toLowerCase()}`;
   };
 
   const hasUploadedDocuments = uploadResult && 
@@ -261,29 +242,12 @@ export default function DocumentsUploadPage() {
       <div className="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md mt-4">
         <h1 className="text-3xl font-bold mb-6 text-green-900 text-center">Upload Documents</h1>
         
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-center text-red-800">
-              <span className="font-medium">Error: {error}</span>
-            </div>
-          </div>
-        )}
-        
-        {success && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-            <div className="flex items-center text-green-800">
-              <span className="font-medium">{success}</span>
-            </div>
-          </div>
-        )}
+        {error && <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 font-medium">{error}</div>}
+        {success && <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800 font-medium">{success}</div>}
 
-        {/* Uploaded Documents List */}
         {hasUploadedDocuments && (
           <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4 text-green-800 flex items-center">
-              <FileText className="mr-2" size={24} />
-              Previously Uploaded Documents
-            </h2>
+            <h2 className="text-xl font-semibold mb-4 text-green-800 flex items-center"><FileText className="mr-2" size={24} /> Previously Uploaded Documents</h2>
             <div className="grid gap-4">
               {documentTypes.map((docType) => {
                 const filePath = uploadResult[docType.field];
@@ -295,48 +259,19 @@ export default function DocumentsUploadPage() {
                 const fileExtension = getFileExtension(fileName);
 
                 return (
-                  <div key={docType.field} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <div className="bg-green-100 p-3 rounded-lg">
-                          <Icon size={24} className="text-green-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-gray-800">{docType.label}</h3>
-                          <p className="text-sm text-gray-600">
-                            {fileName} • {fileExtension} • {formatFileSize(fileSize)}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            Uploaded: {new Date(uploadResult.updated_at || '').toLocaleDateString()}
-                          </p>
-                        </div>
+                  <div key={docType.field} className="border border-gray-200 rounded-lg p-4 flex justify-between items-center">
+                    <div className="flex items-center space-x-4">
+                      <div className="bg-green-100 p-3 rounded-lg"><Icon size={24} className="text-green-600" /></div>
+                      <div>
+                        <h3 className="font-semibold text-gray-800">{docType.label}</h3>
+                        <p className="text-sm text-gray-600">{fileName} • {fileExtension} • {formatFileSize(fileSize)}</p>
+                        <p className="text-xs text-gray-500">Uploaded: {new Date(uploadResult.updated_at || '').toLocaleDateString()}</p>
                       </div>
-                      <div className="flex space-x-2">
-                        <button
-                          type="button"
-                          onClick={() => handleView(docType.field as string)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="View document"
-                        >
-                          <Eye size={20} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDownload(docType.field as string, fileName)}
-                          className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                          title="Download document"
-                        >
-                          <Download size={20} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteDocument(docType.field)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete document"
-                        >
-                          <Trash2 size={20} />
-                        </button>
-                      </div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <button onClick={() => handleView(docType.field)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg" title="View"><Eye size={20} /></button>
+                      <button onClick={() => handleDownload(docType.field, fileName)} className="p-2 text-green-600 hover:bg-green-50 rounded-lg" title="Download"><Download size={20} /></button>
+                      <button onClick={() => handleDeleteDocument(docType.field)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg" title="Delete"><Trash2 size={20} /></button>
                     </div>
                   </div>
                 );
@@ -345,7 +280,6 @@ export default function DocumentsUploadPage() {
           </div>
         )}
 
-        {/* Upload Form */}
         <div className="border-t pt-8">
           <h2 className="text-xl font-semibold mb-6 text-green-800">
             {hasUploadedDocuments ? 'Upload New Documents (Will Replace Existing)' : 'Upload Required Documents'}
@@ -356,17 +290,12 @@ export default function DocumentsUploadPage() {
               const Icon = docType.icon;
               const currentFile = files[docType.field as keyof typeof files];
               const hasExistingFile = uploadResult?.[docType.field];
-              
               return (
                 <div key={docType.name} className="border border-gray-200 rounded-lg p-4">
-                  <label className="block font-semibold text-gray-700 mb-3" htmlFor={docType.name}>
-                    <Icon className="inline mr-2" size={20} />
-                    {docType.label} {docType.required && '*'}
-                    {hasExistingFile && (
-                      <span className="text-sm text-green-600 ml-2">(Already uploaded)</span>
-                    )}
+                  <label htmlFor={docType.name} className="block font-semibold text-gray-700 mb-3">
+                    <Icon className="inline mr-2" size={20} /> {docType.label} {docType.required && '*'}
+                    {hasExistingFile && <span className="text-sm text-green-600 ml-2">(Already uploaded)</span>}
                   </label>
-                  
                   <div className="flex items-center space-x-4">
                     <input
                       type="file"
@@ -377,47 +306,22 @@ export default function DocumentsUploadPage() {
                       required={docType.required && !hasExistingFile}
                       className="flex-1 border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     />
-                    
                     {currentFile && (
                       <div className="flex items-center space-x-2 bg-green-50 p-2 rounded">
                         <File size={16} className="text-green-600" />
-                        <span className="text-sm text-green-800">
-                          {currentFile.name} ({formatFileSize(currentFile.size)})
-                        </span>
+                        <span className="text-sm text-green-800">{currentFile.name} ({formatFileSize(currentFile.size)})</span>
                       </div>
                     )}
                   </div>
-                  
-                  <p className="text-sm text-gray-500 mt-2">
-                    Accepted formats: PDF, JPG, JPEG, PNG (Max: 5MB)
-                  </p>
+                  <p className="text-sm text-gray-500 mt-2">Accepted formats: PDF, JPG, JPEG, PNG (Max: 5MB)</p>
                 </div>
               );
             })}
 
             <div className="flex gap-4 pt-4">
-              <Button2
-                type="button"
-                onClick={() => router.back()}
-                className="bg-gray-500 text-white px-8 py-3 rounded-lg hover:bg-gray-600 transition-colors"
-                disabled={uploading}
-              >
-                Back
-              </Button2>
-              
-              <Button2 
-                type="submit" 
-                className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center min-w-[120px]"
-                disabled={uploading}
-              >
-                {uploading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Uploading...
-                  </>
-                ) : (
-                  'Upload Documents'
-                )}
+              <Button2 type="button" onClick={() => router.back()} className="bg-gray-500 text-white px-8 py-3 rounded-lg hover:bg-gray-600 transition-colors" disabled={uploading}>Back</Button2>
+              <Button2 type="submit" className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center min-w-[120px]" disabled={uploading}>
+                {uploading ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div> : 'Upload Documents'}
               </Button2>
             </div>
           </form>
