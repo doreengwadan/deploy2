@@ -13,8 +13,11 @@ export default function ApplyPage() {
     email: '',
     phone: '',
     password: '',
-    role: 'guest', // default role
+    role: 'guest',
   });
+
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: string; text: string } | null>(null);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value } = e.target;
@@ -26,38 +29,36 @@ export default function ApplyPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setLoading(true);
+    setMessage(null);
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/register', {
+      const response = await fetch('/api/applicants', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
 
       const data = await response.json();
 
-      if (response.ok) {
-        alert('Application submitted successfully!');
-        setForm({
-          title: '',
-          firstname: '',
-          middlename: '',
-          lastname: '',
-          dob: '',
-          email: '',
-          phone: '',
-          password: '',
-          role: 'guest',
-        });
-      } else {
-        alert(`Failed: ${data.message || 'An error occurred'}`);
-      }
-    } catch (error) {
-      alert('Something went wrong!');
-      console.error(error);
+      if (!response.ok) throw new Error(data.error || 'Failed to register');
+
+      setMessage({ type: 'success', text: 'Application submitted successfully!' });
+      setForm({
+        title: '',
+        firstname: '',
+        middlename: '',
+        lastname: '',
+        dob: '',
+        email: '',
+        phone: '',
+        password: '',
+        role: 'guest',
+      });
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message });
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -68,8 +69,18 @@ export default function ApplyPage() {
           Register to Apply
         </h1>
 
+        {message && (
+          <p
+            className={`mb-4 text-center px-4 py-2 rounded ${
+              message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+            }`}
+          >
+            {message.text}
+          </p>
+        )}
+
         {/* Title */}
-        <label htmlFor="title" className="block mb-2 font-semibold text-gray-400">Title</label>
+        <label htmlFor="title" className="block mb-2 font-semibold text-gray-500">Title</label>
         <select
           id="title"
           name="title"
@@ -86,46 +97,30 @@ export default function ApplyPage() {
           <option value="Prof">Prof</option>
         </select>
 
-        {/* First Name */}
-        <label htmlFor="firstname" className="block mb-2 font-semibold text-gray-400">First Name</label>
-        <input
-          id="firstname"
-          name="firstname"
-          type="text"
-          required
-          value={form.firstname}
-          onChange={handleChange}
-          placeholder="Your first name"
-          className="w-full mb-4 border border-gray-300 rounded px-3 py-2"
-        />
-
-        {/* Middle Name */}
-        <label htmlFor="middlename" className="block mb-2 font-semibold text-gray-400">Middle Name (Optional)</label>
-        <input
-          id="middlename"
-          name="middlename"
-          type="text"
-          value={form.middlename}
-          onChange={handleChange}
-          placeholder="Your middle name"
-          className="w-full mb-4 border border-gray-300 rounded px-3 py-2"
-        />
-
-        {/* Last Name */}
-        <label htmlFor="lastname" className="block mb-2 font-semibold text-gray-400">Last Name</label>
-        <input
-          id="lastname"
-          name="lastname"
-          type="text"
-          required
-          value={form.lastname}
-          onChange={handleChange}
-          placeholder="Your last name"
-          className="w-full mb-4 border border-gray-300 rounded px-3 py-2"
-        />
+        {/* Names */}
+        {['firstname', 'middlename', 'lastname'].map((field, i) => (
+          <div key={i}>
+            <label
+              htmlFor={field}
+              className="block mb-2 font-semibold text-gray-500 capitalize"
+            >
+              {field === 'middlename' ? 'Middle Name (Optional)' : `${field.charAt(0).toUpperCase() + field.slice(1)} Name`}
+            </label>
+            <input
+              id={field}
+              name={field}
+              type="text"
+              required={field !== 'middlename'}
+              value={(form as any)[field]}
+              onChange={handleChange}
+              placeholder={`Your ${field.replace('name', ' name')}`}
+              className="w-full mb-4 border border-gray-300 rounded px-3 py-2"
+            />
+          </div>
+        ))}
 
         {/* DOB */}
-        <label htmlFor="dob" className="block mb-2 font-semibold text-gray-400">Date of Birth</label>
+        <label htmlFor="dob" className="block mb-2 font-semibold text-gray-500">Date of Birth</label>
         <input
           id="dob"
           name="dob"
@@ -137,7 +132,7 @@ export default function ApplyPage() {
         />
 
         {/* Email */}
-        <label htmlFor="email" className="block mb-2 font-semibold text-gray-400">Email</label>
+        <label htmlFor="email" className="block mb-2 font-semibold text-gray-500">Email</label>
         <input
           id="email"
           name="email"
@@ -150,7 +145,7 @@ export default function ApplyPage() {
         />
 
         {/* Phone */}
-        <label htmlFor="phone" className="block mb-2 font-semibold text-gray-400">Phone Number</label>
+        <label htmlFor="phone" className="block mb-2 font-semibold text-gray-500">Phone</label>
         <input
           id="phone"
           name="phone"
@@ -163,7 +158,7 @@ export default function ApplyPage() {
         />
 
         {/* Password */}
-        <label htmlFor="password" className="block mb-2 font-semibold text-gray-400">Password</label>
+        <label htmlFor="password" className="block mb-2 font-semibold text-gray-500">Password</label>
         <input
           id="password"
           name="password"
@@ -175,12 +170,12 @@ export default function ApplyPage() {
           className="w-full mb-6 border border-gray-300 rounded px-3 py-2"
         />
 
-        {/* Submit */}
         <button
           type="submit"
-          className="bg-green-700 hover:bg-green-800 text-white font-semibold px-6 py-2 rounded w-full"
+          disabled={loading}
+          className="bg-green-700 hover:bg-green-800 text-white font-semibold px-6 py-2 rounded w-full transition-colors"
         >
-          Register & Apply
+          {loading ? 'Submitting...' : 'Register & Apply'}
         </button>
 
         <p className="mt-6 text-center text-gray-600">
