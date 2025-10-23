@@ -1,14 +1,11 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
 import { FileText, CreditCard, Receipt, Download, Trash2, Eye, File } from 'lucide-react';
 import ProgressIndicator from '@/componets/ProgressIndicator';
 import Button2 from '@/componets/Button2';
-
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api';
-
 type UploadedRecord = {
   id?: number;
   applicant_id?: number;
@@ -24,26 +21,23 @@ type UploadedRecord = {
   created_at?: string;
   updated_at?: string;
 };
-
+type FileField = 'msce' | 'id_card' | 'payment_proof';
 type DocumentInfo = {
-  name: keyof UploadedRecord;
-  field: keyof UploadedRecord;
+  name: FileField;
+  field: FileField;
   label: string;
   required: boolean;
   icon: React.ComponentType<any>;
 };
-
 const documentTypes: DocumentInfo[] = [
   { name: 'msce', field: 'msce', label: 'MSCE/Equivalent Certificate', required: true, icon: FileText },
   { name: 'id_card', field: 'id_card', label: 'National ID or Passport', required: true, icon: CreditCard },
   { name: 'payment_proof', field: 'payment_proof', label: 'Payment Proof', required: false, icon: Receipt },
 ];
-
 export default function DocumentsUploadPage() {
   const router = useRouter();
-
   const [token, setToken] = useState<string | null>(null);
-  const [files, setFiles] = useState<{ [K in keyof Pick<UploadedRecord, 'msce' | 'id_card' | 'payment_proof'>]: File | null }>({
+  const [files, setFiles] = useState<{ [K in FileField]: File | null }>({
     msce: null,
     id_card: null,
     payment_proof: null,
@@ -53,7 +47,6 @@ export default function DocumentsUploadPage() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-
   useEffect(() => {
     const storedToken = Cookies.get('token');
     if (!storedToken) {
@@ -63,7 +56,6 @@ export default function DocumentsUploadPage() {
     setToken(storedToken);
     fetchExistingDocuments(storedToken);
   }, [router]);
-
   const fetchExistingDocuments = async (authToken: string) => {
     try {
       const res = await fetch(`${API_BASE_URL}/applicants/documents`, {
@@ -73,7 +65,6 @@ export default function DocumentsUploadPage() {
           'Content-Type': 'application/json',
         },
       });
-
       if (res.ok) {
         const result = await res.json();
         setUploadResult(result.record as UploadedRecord);
@@ -84,7 +75,6 @@ export default function DocumentsUploadPage() {
       setLoading(false);
     }
   };
-
   const formatFileSize = (bytes?: number): string => {
     if (!bytes || bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -92,50 +82,41 @@ export default function DocumentsUploadPage() {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, files: selectedFiles } = e.target;
     if (selectedFiles && selectedFiles.length > 0) {
-      setFiles((prev) => ({ ...prev, [name]: selectedFiles[0] }));
+      setFiles((prev) => ({ ...prev, [name as FileField]: selectedFiles[0] }));
     }
     setError(null);
   };
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!token) {
       setError('User not authenticated');
       return;
     }
-
     setUploading(true);
     setError(null);
     setSuccess(null);
-
     const formData = new FormData();
     if (files.msce) formData.append('msce', files.msce);
     if (files.id_card) formData.append('id_card', files.id_card);
     if (files.payment_proof) formData.append('payment_proof', files.payment_proof);
-
     try {
       const res = await fetch(`${API_BASE_URL}/applicants/documents`, {
         method: 'POST',
         body: formData,
         headers: { Authorization: `Bearer ${token}` },
       });
-
       const contentType = res.headers.get('content-type');
       if (!res.ok) {
         const text = contentType?.includes('application/json') ? await res.json() : await res.text();
         throw new Error(text?.error || 'Upload failed');
       }
-
       const result = await res.json();
       setUploadResult(result.record as UploadedRecord);
       setSuccess('Documents uploaded successfully! Redirecting to application fees...');
-
       setFiles({ msce: null, id_card: null, payment_proof: null });
-
       setTimeout(() => {
         router.push('/application/application-fees');
       }, 2000);
@@ -146,12 +127,9 @@ export default function DocumentsUploadPage() {
       setUploading(false);
     }
   };
-
-  const handleDeleteDocument = async (field: keyof UploadedRecord) => {
+  const handleDeleteDocument = async (field: FileField) => {
     if (!token || !uploadResult || !uploadResult[field]) return;
-
     if (!confirm('Are you sure you want to delete this document?')) return;
-
     try {
       const res = await fetch(`${API_BASE_URL}/applicants/documents/${field}`, {
         method: 'DELETE',
@@ -160,12 +138,10 @@ export default function DocumentsUploadPage() {
           'Content-Type': 'application/json',
         },
       });
-
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || 'Delete failed');
       }
-
       setSuccess('Document deleted successfully!');
       fetchExistingDocuments(token);
     } catch (err: any) {
@@ -173,20 +149,17 @@ export default function DocumentsUploadPage() {
       setError(err.message || 'Failed to delete document.');
     }
   };
-
   const getFileUrl = (filePath: string) => {
     const baseUrl = API_BASE_URL.replace('/api', '');
     return `${baseUrl}/storage/${filePath}`;
   };
-
-  const handleDownload = async (field: keyof UploadedRecord, filename: string) => {
+  const handleDownload = async (field: FileField, filename: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/applicants/documents/${field}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
-
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -207,11 +180,9 @@ export default function DocumentsUploadPage() {
       window.open(fileUrl, '_blank');
     }
   };
-
-  const handleView = (field: keyof UploadedRecord) => {
+  const handleView = (field: FileField) => {
     const apiUrl = `${API_BASE_URL}/applicants/documents/${field}`;
     const directUrl = getFileUrl(uploadResult?.[field] as string);
-    
     const newWindow = window.open(apiUrl, '_blank');
     setTimeout(() => {
       if (newWindow && newWindow.closed) {
@@ -219,21 +190,17 @@ export default function DocumentsUploadPage() {
       }
     }, 1000);
   };
-
   const getFileExtension = (filename: string): string => {
     return filename.split('.').pop()?.toUpperCase() || 'FILE';
   };
-
-  const getFileName = (document: UploadedRecord, field: keyof UploadedRecord): string => {
+  const getFileName = (document: UploadedRecord, field: FileField): string => {
     const nameField = `${field}_name` as keyof UploadedRecord;
     const value = document[nameField];
     if (typeof value === 'string') return value;
     return `document.${getFileExtension((document[field] as string) || '').toLowerCase()}`;
   };
-
   const hasUploadedDocuments = uploadResult && 
     (uploadResult.msce || uploadResult.id_card || uploadResult.payment_proof);
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -244,16 +211,13 @@ export default function DocumentsUploadPage() {
       </div>
     );
   }
-
   return (
     <>
       <ProgressIndicator currentStep={8} />
       <div className="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md mt-4">
         <h1 className="text-3xl font-bold mb-6 text-green-900 text-center">Upload Documents</h1>
-        
         {error && <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 font-medium">{error}</div>}
         {success && <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800 font-medium">{success}</div>}
-
         {/* Uploaded Documents */}
         {hasUploadedDocuments && (
           <div className="mb-8">
@@ -269,7 +233,6 @@ export default function DocumentsUploadPage() {
                 const fileSize = uploadResult[`${docType.field}_size` as keyof UploadedRecord] as number;
                 const fileName = getFileName(uploadResult, docType.field);
                 const fileExtension = getFileExtension(fileName);
-
                 return (
                   <div key={docType.field} className="border border-gray-200 rounded-lg p-4 flex justify-between items-center">
                     <div className="flex items-center space-x-4">
@@ -293,7 +256,6 @@ export default function DocumentsUploadPage() {
             </div>
           </div>
         )}
-
         {/* Upload Form */}
         <form onSubmit={handleSubmit} className="space-y-6" encType="multipart/form-data">
           {documentTypes.map((docType) => {
@@ -328,7 +290,6 @@ export default function DocumentsUploadPage() {
               </div>
             );
           })}
-
           <div className="flex gap-4 pt-4">
             <Button2 type="button" onClick={() => router.back()} className="bg-gray-500 text-white px-8 py-3 rounded-lg hover:bg-gray-600" disabled={uploading}>Back</Button2>
             <Button2 type="submit" className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 flex items-center justify-center min-w-[120px]" disabled={uploading}>
