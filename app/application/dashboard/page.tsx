@@ -27,14 +27,13 @@ export default function DashboardPage() {
         </p>
 
         {/* Button */}
-        <div className="w-full flex justify-start sm:justify-start">
+        <div className="w-full sm:w-auto flex justify-start">
           <Button
             type="button"
             title="Apply Now"
             icon=""
             variant="bg-teal-800"
             href="/application/select-type"
-            className="w-full sm:w-auto"
           />
         </div>
       </div>
