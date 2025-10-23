@@ -6,8 +6,46 @@ import { CheckCircle, AlertCircle, FileText, User, Phone, BookOpen, ChevronRight
 import ProgressIndicator from '@/componets/ProgressIndicator';
 import Button2 from '@/componets/Button2';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api';
+interface SubjectRecord {
+  qualification: string;
+  centreNumber: string;
+  examNumber: string;
+  subject: string;
+  grade: string;
+  year: string;
+}
+interface PersonalData {
+  firstname?: string;
+  lastname?: string;
+  email?: string;
+  dob?: string;
+  programme_id?: string;
+}
+interface ContactData {
+  mobile1?: string;
+  mobile2?: string;
+  email?: string;
+  postal_address?: string;
+}
+interface NextOfKin {
+  id: number;
+  title: string;
+  firstName: string;
+  lastName: string;
+  relationship: string;
+  mobile1: string;
+  mobile2?: string;
+  email?: string;
+  address?: string;
+}
+interface ApplicationData {
+  personal: PersonalData | null;
+  contact: ContactData | null;
+  nextOfKin: NextOfKin[];
+  subjects: SubjectRecord[];
+}
 export default function FinalSubmitPage() {
-  const [data, setData] = useState({
+  const [data, setData] = useState<ApplicationData>({
     personal: null,
     contact: null,
     nextOfKin: [],
@@ -61,7 +99,7 @@ export default function FinalSubmitPage() {
           axiosInstance.get(`/applicants/${applicantId}/next-of-kin`),
           axiosInstance.get(`/subject-records`),
         ]);
-        const subjectRecords = Array.isArray(subjectsRes.data)
+        const subjectRecords: SubjectRecord[] = Array.isArray(subjectsRes.data)
           ? subjectsRes.data.map((r: any) => ({
               qualification: r.qualification || '',
               centreNumber: r.centre_number || '',
@@ -71,12 +109,13 @@ export default function FinalSubmitPage() {
               year: r.year || '',
             }))
           : [];
+        const nextOfKinData: NextOfKin[] = Array.isArray(kinRes.data.data)
+          ? kinRes.data.data
+          : kinRes.data.data ? [kinRes.data.data] : [];
         setData({
           personal: personalRes.data.data || personalRes.data,
           contact: contactRes.data.contact || contactRes.data.data || contactRes.data,
-          nextOfKin: Array.isArray(kinRes.data.data)
-            ? kinRes.data.data
-            : [kinRes.data.data || kinRes.data],
+          nextOfKin: nextOfKinData,
           subjects: subjectRecords,
         });
       } catch (err: any) {
@@ -252,7 +291,7 @@ export default function FinalSubmitPage() {
                   </div>
                   {data.nextOfKin.length > 0 ? (
                     <div className="space-y-4">
-                      {data.nextOfKin.map((kin: any, index: number) => (
+                      {data.nextOfKin.map((kin: NextOfKin, index: number) => (
                         <div key={kin.id} className="bg-white rounded-lg p-4 border border-purple-200">
                           <div className="flex items-center justify-between mb-3">
                             <h4 className="font-semibold text-gray-900">
@@ -317,7 +356,7 @@ export default function FinalSubmitPage() {
                           </tr>
                         </thead>
                         <tbody>
-                          {data.subjects.map((r: any, i: number) => (
+                          {data.subjects.map((r: SubjectRecord, i: number) => (
                             <tr key={i} className="hover:bg-orange-50/30 transition-colors">
                               <td className="p-3 border-b text-sm">{r.qualification}</td>
                               <td className="p-3 border-b text-sm font-mono">{r.centreNumber}</td>
@@ -410,4 +449,4 @@ export default function FinalSubmitPage() {
       </div>
     </>
   );
-}
+}add 
