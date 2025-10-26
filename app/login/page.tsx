@@ -125,7 +125,7 @@ export default function LoginPage() {
 
       {/* Login Form */}
       <div className="relative z-10 w-full max-w-md">
-        <div className="text-center mb-8">
+        
           
 
         <form onSubmit={handleSubmit} className="bg-white/15 backdrop-blur-lg border border-white/20 rounded-2xl shadow-2xl p-8">
