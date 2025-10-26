@@ -1,5 +1,10 @@
+declare global {
+  var _sql: any;
+}
+
 import { NextRequest, NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
+
 import postgres from 'postgres';
 
 const connectionString = process.env.apply_POSTGRES_URL;

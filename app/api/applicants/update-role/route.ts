@@ -1,5 +1,6 @@
 import postgres from "postgres";
-import jwt from "jsonwebtoken";
+import * as jwt from 'jsonwebtoken';
+
 
 const connectionString =
   process.env.apply_POSTGRES_PRISMA_URL ||
