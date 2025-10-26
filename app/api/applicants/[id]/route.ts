@@ -1,32 +1,35 @@
+// Declare global _sql variable to satisfy TypeScript
 declare global {
   var _sql: any;
 }
 
 import { NextRequest, NextResponse } from 'next/server';
-import * as jwt from 'jsonwebtoken';
-
+import jwt from 'jsonwebtoken';
 import postgres from 'postgres';
 
+// Use environment variable for Postgres connection
 const connectionString = process.env.apply_POSTGRES_URL;
 if (!connectionString) throw new Error('Missing Postgres connection string');
 
+// Initialize global SQL connection
 let sql: any;
 if (!globalThis._sql) {
   globalThis._sql = postgres(connectionString, { ssl: { rejectUnauthorized: false } });
 }
 sql = globalThis._sql;
 
+// JWT secret
 const JWT_SECRET = process.env.apply_SUPABASE_JWT_SECRET || 'fallback_secret';
 
 export async function GET(req: NextRequest) {
   try {
-    // Extract ID from URL path
+    // Extract ID from URL
     const url = new URL(req.url);
     const pathParts = url.pathname.split('/');
-    const id = pathParts[pathParts.length - 1]; // last part of path
+    const id = pathParts[pathParts.length - 1];
     if (!id) return NextResponse.json({ message: 'ID is required' }, { status: 400 });
 
-    // Check Authorization
+    // Check Authorization header
     const authHeader = req.headers.get('authorization');
     if (!authHeader) return NextResponse.json({ message: 'Unauthorized: Missing token' }, { status: 401 });
 
@@ -38,10 +41,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized: Invalid or expired token' }, { status: 401 });
     }
 
-    // Optional: Ensure token matches requested ID
+    // Ensure token matches requested ID
     if (decoded.id !== id) return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
 
-    // Query full applicant profile
+    // Query applicant from database
     const applicants = await sql`
       SELECT id, firstname, middlename, lastname, gender, dob, nationality, national_id,
              home_district, physical_address, email, role
