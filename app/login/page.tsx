@@ -126,14 +126,7 @@ export default function LoginPage() {
       {/* Login Form */}
       <div className="relative z-10 w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 shadow-2xl">
-            <h1 className="text-4xl font-bold text-white mb-3">Mzuzu University</h1>
-            <h2 className="text-2xl font-semibold text-white/90">
-              Online Application System
-            </h2>
-            <div className="w-20 h-1 bg-green-400 mx-auto mt-4 rounded-full"></div>
-          </div>
-        </div>
+          
 
         <form onSubmit={handleSubmit} className="bg-white/15 backdrop-blur-lg border border-white/20 rounded-2xl shadow-2xl p-8">
           <h2 className="text-2xl font-bold mb-6 text-white text-center">Welcome Back</h2>
