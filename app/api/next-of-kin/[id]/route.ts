@@ -26,10 +26,10 @@ async function verifyToken(req: NextRequest) {
 }
 
 // GET — fetch next of kin
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await verifyToken(req);
-    const { id } = params;
+    const { id } = await params;
 
     const kin = await sql`
       SELECT * FROM next_of_kin WHERE applicant_id = ${id}
@@ -43,11 +43,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 
 // POST — add a next of kin
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await verifyToken(req);
     const { title, firstName, lastName, relationship, mobile1, mobile2, email, address } = await req.json();
-    const { id } = params;
+    const { id } = await params;
 
     const inserted = await sql`
       INSERT INTO next_of_kin 
@@ -65,11 +65,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 }
 
 // PUT — update a next of kin
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await verifyToken(req);
     const { kinId, title, firstName, lastName, relationship, mobile1, mobile2, email, address } = await req.json();
-    const { id } = params;
+    const { id } = await params;
 
     await sql`
       UPDATE next_of_kin
@@ -93,11 +93,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 }
 
 // DELETE — remove a next of kin
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await verifyToken(req);
     const { kinId } = await req.json();
-    const { id } = params;
+    const { id } = await params;
 
     await sql`
       DELETE FROM next_of_kin WHERE id = ${kinId} AND applicant_id = ${id}
