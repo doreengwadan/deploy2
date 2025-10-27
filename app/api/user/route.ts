@@ -34,8 +34,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized: Invalid or expired token' }, { status: 401 });
     }
 
-    // Query user from DB
-    const users = await sql`SELECT id, firstname, middlename, lastname, email, role FROM applicants WHERE id = ${decoded.id}`;
+    // Fetch user from database
+    const users = await sql<{
+      id: number;
+      firstname: string;
+      middlename: string | null;
+      lastname: string;
+      email: string;
+      role: string;
+    }>`SELECT id, firstname, middlename, lastname, email, role FROM applicants WHERE id = ${decoded.id}`;
+
     if (!users || users.length === 0) {
       return NextResponse.json({ message: 'User not found' }, { status: 404 });
     }
@@ -50,7 +58,8 @@ export async function GET(req: NextRequest) {
       email: user.email,
       role: user.role,
     });
-  } catch (error: any) {
-    return NextResponse.json({ message: error.message || 'Server error' }, { status: 500 });
+  } catch (err: any) {
+    console.error('GET /api/user error:', err);
+    return NextResponse.json({ message: err.message || 'Server error' }, { status: 500 });
   }
 }

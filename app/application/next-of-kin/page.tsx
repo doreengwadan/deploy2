@@ -5,8 +5,6 @@ import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
 import ProgressIndicator from '@/componets/ProgressIndicator';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api';
-
 export default function NextOfKinPage() {
   const [form, setForm] = useState({
     title: '',
@@ -18,7 +16,6 @@ export default function NextOfKinPage() {
     email: '',
     address: '',
   });
-
   const [savedKins, setSavedKins] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,46 +26,45 @@ export default function NextOfKinPage() {
   const router = useRouter();
   const token = Cookies.get('token');
 
+  const authFetch = async (url: string, options: RequestInit = {}) => {
+    if (!token) throw new Error('User not authenticated');
+
+    const headers = {
+      ...options.headers,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+    };
+
+    const res = await fetch(url, { ...options, headers, credentials: 'include' });
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) throw new Error(data.message || 'Request failed');
+    return data;
+  };
+
   useEffect(() => {
     if (!token) {
       router.push('/login');
       return;
     }
-    fetchUser();
-  }, [token]);
 
-  const fetchUser = async () => {
-    try {
-      const resUser = await fetch(`${API_BASE_URL}/user`, {
-        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-      });
-      if (!resUser.ok) throw new Error('Not authenticated');
-      const user = await resUser.json();
-      setUserId(user.id);
+    const fetchData = async () => {
+      try {
+        const user = await authFetch('/api/user');
+        setUserId(user.id);
 
-      fetchSavedKins(user.id);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchSavedKins = async (applicantId: number) => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/applicants/${applicantId}/next-of-kin`, {
-        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-      });
-      if (!res.ok) {
-        setSavedKins([]);
-        return;
+        const kinData = await authFetch(`/api/next-of-kin/${user.id}`);
+        setSavedKins(kinData.data || []);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
-      const data = await res.json();
-      setSavedKins(data.data || []);
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
+    };
+
+    fetchData();
+  }, [token, router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -76,35 +72,22 @@ export default function NextOfKinPage() {
   };
 
   const saveKin = async () => {
-    if (!userId || !token) {
+    if (!userId) {
       setError('User not authenticated');
       return false;
     }
 
     setIsSubmitting(true);
     try {
-      const url = editingId
-        ? `${API_BASE_URL}/applicants/${userId}/next-of-kin/${editingId}`
-        : `${API_BASE_URL}/applicants/${userId}/next-of-kin`;
-
       const method = editingId ? 'PUT' : 'POST';
+      const url = editingId
+        ? `/api/next-of-kin/${userId}`
+        : `/api/next-of-kin/${userId}`;
 
-      const res = await fetch(url, {
+      const saved = await authFetch(url, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/json',
-        },
-        body: JSON.stringify(form),
+        body: JSON.stringify(editingId ? { ...form, kinId: editingId } : form),
       });
-
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.message || 'Failed to save next of kin details');
-      }
-
-      const saved = await res.json();
 
       if (editingId) {
         setSavedKins((prev) =>
@@ -142,25 +125,19 @@ export default function NextOfKinPage() {
   const handleNext = async () => {
     const success = await saveKin();
     if (!success) return;
-  
+
     try {
-      const res = await fetch(`${API_BASE_URL}/user`, {
-        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-      });
-      if (!res.ok) throw new Error('Failed to fetch user');
-      const user = await res.json();
-  
+      const user = await authFetch('/api/user');
+
       if (user.role?.toLowerCase() === 'postgraduate') {
         router.push('/application/academicHistory');
       } else {
         router.push('/application/High-school-records');
       }
-    } catch (err) {
-      console.error('Error checking role:', err);
-      router.push('/application/High-school-records'); // fallback
+    } catch {
+      router.push('/application/High-school-records');
     }
   };
-  
 
   const handleEdit = (kin: any) => {
     setForm({
@@ -177,30 +154,26 @@ export default function NextOfKinPage() {
   };
 
   const handleDelete = async (kinId: number) => {
-    if (!userId || !token) return;
+    if (!userId) return;
     if (!confirm('Are you sure you want to delete this next of kin?')) return;
-    
+
     try {
-      const res = await fetch(`${API_BASE_URL}/applicants/${userId}/next-of-kin/${kinId}`, {
+      await authFetch(`/api/next-of-kin/${userId}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+        body: JSON.stringify({ kinId }),
       });
-      if (!res.ok) throw new Error('Failed to delete');
       setSavedKins((prev) => prev.filter((k) => k.id !== kinId));
     } catch (err: any) {
       setError(err.message);
     }
   };
 
-  if (loading) return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Loading your information...</p>
+  if (loading)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div>Loading...</div>
       </div>
-    </div>
-  );
-
+    );
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 py-8">
       <ProgressIndicator currentStep={5} />
@@ -245,10 +218,10 @@ export default function NextOfKinPage() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white"
                   >
                     <option value="">Select Title</option>
-                    <option>Mr</option>
-                    <option>Mrs</option>
-                    <option>Miss</option>
-                    <option>Dr</option>
+                    <option value="Mr">Mr</option>
+                    <option value="Mrs">Mrs</option>
+                    <option value="Miss">Miss</option>
+                    <option value="Dr">Dr</option>
                   </select>
                 </div>
 
@@ -265,14 +238,14 @@ export default function NextOfKinPage() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white"
                   >
                     <option value="">Select Relationship</option>
-                    <option>Parent</option>
-                    <option>Sibling</option>
-                    <option>Spouse</option>
-                    <option>Guardian</option>
-                    <option>Uncle</option>
-                    <option>Aunt</option>
-                    <option>Grandparent</option>
-                    <option>Other</option>
+                    <option value="Parent">Parent</option>
+                    <option value="Sibling">Sibling</option>
+                    <option value="Spouse">Spouse</option>
+                    <option value="Guardian">Guardian</option>
+                    <option value="Uncle">Uncle</option>
+                    <option value="Aunt">Aunt</option>
+                    <option value="Grandparent">Grandparent</option>
+                    <option value="Other">Other</option>
                   </select>
                 </div>
 
