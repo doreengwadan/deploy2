@@ -28,22 +28,19 @@ export default function ApplicantsPage() {
   useEffect(() => {
     const fetchApplicants = async () => {
       try {
-        const token = Cookies.get('token');
-        const res = await axios.get(`${API_BASE_URL}/admin/applicants`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await axios.get('/api/applicants'); // Next.js route
         setApplicants(res.data);
       } catch (err) {
         console.error('Failed to fetch applicants:', err);
-        alert('Failed to fetch applicants. Make sure you are logged in.');
+        alert('Failed to fetch applicants.'); // optional
       } finally {
         setLoading(false);
       }
     };
-
+  
     fetchApplicants();
   }, []);
-
+  
   // Filter applicants based on search and status
   const filteredApplicants = applicants.filter(applicant => {
     const matchesSearch = 

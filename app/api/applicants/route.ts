@@ -22,7 +22,41 @@ if (!globalThis._sql) {
 }
 sql = globalThis._sql;
 
-// --- POST handler ---
+// --- GET handler (Fetch all applicants) ---
+export async function GET() {
+  try {
+    const applicants = await sql`
+      SELECT 
+        id, 
+        title, 
+        firstname, 
+        middlename, 
+        lastname, 
+        dob, 
+        email, 
+        phone, 
+        role, 
+        created_at 
+      FROM applicants
+      ORDER BY id DESC
+    `;
+
+    return new Response(JSON.stringify(applicants), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    console.error("❌ Error fetching applicants:", error);
+    return new Response(
+      JSON.stringify({
+        error: error instanceof Error ? error.message : String(error),
+      }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+}
+
+// --- POST handler (Register applicant) ---
 export async function POST(req: Request) {
   try {
     const {

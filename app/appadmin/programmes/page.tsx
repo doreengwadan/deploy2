@@ -1,19 +1,15 @@
-"use client";
-
+'use client';
 import { useEffect, useState } from "react";
-import Cookies from "js-cookie";
-import axios from "axios";
 import { useRouter } from "next/navigation";
-import { Plus, Pencil, Trash, BookOpen, Building, Hash, Users, X } from "lucide-react";
+import { Plus, Pencil, Trash, BookOpen, Building, Hash, X } from "lucide-react";
 import Link from "next/link";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api";
+import axios from "axios";
 
 type Programme = {
   id: number;
   name: string;
-  description: string;
-  department: string;
+  description?: string;
+  department?: string;
   duration?: string;
   category?: string;
 };
@@ -26,14 +22,11 @@ export default function AdminProgrammesPage() {
   const [notification, setNotification] = useState("");
   const router = useRouter();
 
-  // Fetch programmes
+  // Fetch programmes from Next.js API
   useEffect(() => {
     const fetchProgrammes = async () => {
       try {
-        const token = Cookies.get("token");
-        const res = await axios.get(`${API_BASE_URL}/admin/programmes`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await axios.get("/api/admin/programmes");
         setProgrammes(res.data);
       } catch (err) {
         console.error("Failed to fetch programmes:", err);
@@ -44,26 +37,20 @@ export default function AdminProgrammesPage() {
     fetchProgrammes();
   }, []);
 
-  // Open modal
   const openModal = (prog: Programme) => {
     setProgrammeToDelete(prog);
     setModalOpen(true);
   };
 
-  // Close modal
   const closeModal = () => {
     setProgrammeToDelete(null);
     setModalOpen(false);
   };
 
-  // Delete programme
   const confirmDelete = async () => {
     if (!programmeToDelete) return;
     try {
-      const token = Cookies.get("token");
-      await axios.delete(`${API_BASE_URL}/admin/programmes/${programmeToDelete.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.delete(`/api/admin/programmes/${programmeToDelete.id}`);
       setProgrammes(programmes.filter((p) => p.id !== programmeToDelete.id));
       setNotification(`Programme "${programmeToDelete.name}" deleted successfully!`);
     } catch (err) {
@@ -71,7 +58,6 @@ export default function AdminProgrammesPage() {
       setNotification("Failed to delete programme. Please try again.");
     } finally {
       closeModal();
-      // Hide notification after 3 seconds
       setTimeout(() => setNotification(""), 3000);
     }
   };
@@ -79,7 +65,7 @@ export default function AdminProgrammesPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 p-4 sm:p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header Section */}
+        {/* Header */}
         <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center space-x-3">
             <div className="p-3 bg-green-100 rounded-xl">
@@ -136,70 +122,27 @@ export default function AdminProgrammesPage() {
               <table className="w-full">
                 <thead>
                   <tr className="bg-gradient-to-r from-green-600 to-green-700 text-white">
-                    <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">
-                      <div className="flex items-center space-x-2">
-                        <Hash className="w-4 h-4" />
-                        <span>ID</span>
-                      </div>
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">
-                      <div className="flex items-center space-x-2">
-                        <BookOpen className="w-4 h-4" />
-                        <span>Programme Name</span>
-                      </div>
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">
-                      <div className="flex items-center space-x-2">
-                        <BookOpen className="w-4 h-4" />
-                        <span>Description</span>
-                      </div>
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">
-                      <div className="flex items-center space-x-2">
-                        <Building className="w-4 h-4" />
-                        <span>Department</span>
-                      </div>
-                    </th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold uppercase tracking-wider">
-                      Actions
-                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">ID</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Programme Name</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Description</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Department</th>
+                    <th className="px-6 py-4 text-center text-sm font-semibold uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {programmes.map((prog) => (
                     <tr key={prog.id} className="hover:bg-green-50/50 transition-all duration-200 group">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center justify-center w-8 h-8 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-                          {prog.id}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-gray-900">{prog.name}</div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-700 max-w-xs truncate">{prog.description}</td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center space-x-2">
-                          <Building className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                          <span className="text-sm text-gray-700">{prog.department}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center justify-center space-x-3">
-                          <Link
-                            href={`/appadmin/programmes/edit/${prog.id}`}
-                            className="inline-flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm transition-colors duration-200 group-hover:shadow-md"
-                          >
-                            <Pencil className="w-4 h-4" />
-                            <span>Edit</span>
-                          </Link>
-                          <button
-                            onClick={() => openModal(prog)}
-                            className="inline-flex items-center space-x-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm transition-colors duration-200 group-hover:shadow-md"
-                          >
-                            <Trash className="w-4 h-4" />
-                            <span>Delete</span>
-                          </button>
-                        </div>
+                      <td className="px-6 py-4">{prog.id}</td>
+                      <td className="px-6 py-4">{prog.name}</td>
+                      <td className="px-6 py-4">{prog.description}</td>
+                      <td className="px-6 py-4">{prog.department}</td>
+                      <td className="px-6 py-4 whitespace-nowrap flex justify-center gap-3">
+                        <Link href={`/appadmin/programmes/edit/${prog.id}`} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm">
+                          <Pencil className="w-4 h-4 inline" /> Edit
+                        </Link>
+                        <button onClick={() => openModal(prog)} className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm">
+                          <Trash className="w-4 h-4 inline" /> Delete
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -214,31 +157,16 @@ export default function AdminProgrammesPage() {
       {modalOpen && programmeToDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-6 relative">
-            <button
-              onClick={closeModal}
-              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
-            >
+            <button onClick={closeModal} className="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
               <X className="w-5 h-5" />
             </button>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Confirm Deletion
-            </h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Confirm Deletion</h3>
             <p className="text-gray-700 mb-6">
               Are you sure you want to delete the programme "{programmeToDelete.name}"? This action cannot be undone.
             </p>
             <div className="flex justify-end space-x-3">
-              <button
-                onClick={closeModal}
-                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDelete}
-                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
-              >
-                Delete
-              </button>
+              <button onClick={closeModal} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">Cancel</button>
+              <button onClick={confirmDelete} className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700">Delete</button>
             </div>
           </div>
         </div>

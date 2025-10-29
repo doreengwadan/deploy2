@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import axios from 'axios';
-import Cookies from 'js-cookie';
 import {
   BookOpen,
   Building,
@@ -11,11 +10,7 @@ import {
   Hash,
   Save,
   ArrowLeft,
-  Layers,
 } from 'lucide-react';
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api';
 
 export default function AddOrEditProgrammePage() {
   const router = useRouter();
@@ -27,29 +22,8 @@ export default function AddOrEditProgrammePage() {
   const [department, setDepartment] = useState('');
   const [duration, setDuration] = useState('');
   const [category, setCategory] = useState('');
-  const [level, setLevel] = useState('');
-  const [departments, setDepartments] = useState<{ id: number; name: string }[]>(
-    []
-  );
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-
-  // Fetch departments
-  useEffect(() => {
-    const fetchDepartments = async () => {
-      try {
-        const token = Cookies.get('token');
-        const res = await axios.get(`${API_BASE_URL}/admin/departments`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setDepartments(res.data);
-      } catch (error) {
-        console.error('Error fetching departments:', error);
-        alert('Failed to fetch departments.');
-      }
-    };
-    fetchDepartments();
-  }, []);
 
   // Fetch programme details if editing
   useEffect(() => {
@@ -57,20 +31,15 @@ export default function AddOrEditProgrammePage() {
       if (!programmeId) return;
       setIsEditing(true);
       try {
-        const token = Cookies.get('token');
-        const res = await axios.get(
-          `${API_BASE_URL}/admin/programmes/${programmeId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        const data = res.data;
-        setName(data.name || '');
-        setDescription(data.description || '');
-        setDepartment(data.department || '');
-        setDuration(data.duration || '');
-        setCategory(data.category || '');
-        setLevel(data.level || '');
+        const res = await axios.get(`/api/admin/programmes`);
+        const programme = res.data.find((p: any) => p.id === Number(programmeId));
+        if (!programme) throw new Error('Programme not found');
+
+        setName(programme.name || '');
+        setDescription(programme.description || '');
+        setDepartment(programme.department || '');
+        setDuration(programme.duration || '');
+        setCategory(programme.category || '');
       } catch (error) {
         console.error('Error fetching programme details:', error);
         alert('Failed to fetch programme details.');
@@ -85,34 +54,20 @@ export default function AddOrEditProgrammePage() {
     setLoading(true);
 
     try {
-      const token = Cookies.get('token');
-      const payload = { name, description, department, duration, category, level };
+      const payload = { name, duration, category };
 
       if (isEditing) {
-        await axios.put(`${API_BASE_URL}/admin/programmes/${programmeId}`, payload, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await axios.put('/api/admin/programmes', { ...payload, id: programmeId });
         alert('Programme updated successfully!');
       } else {
-        await axios.post(`${API_BASE_URL}/admin/programmes`, payload, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await axios.post('/api/admin/programmes', payload);
         alert('Programme added successfully!');
       }
 
       router.push('/appadmin/programmes');
     } catch (error: any) {
       console.error('Error saving programme:', error);
-      if (axios.isAxiosError(error)) {
-        console.error('Response:', error.response?.data);
-        alert(
-          `Failed to save programme: ${
-            error.response?.data?.message || error.message
-          }`
-        );
-      } else {
-        alert('An unexpected error occurred.');
-      }
+      alert('Failed to save programme.');
     } finally {
       setLoading(false);
     }
@@ -152,7 +107,6 @@ export default function AddOrEditProgrammePage() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-1 bg-gradient-to-r from-green-600 to-green-700"></div>
           <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-6">
-            {/* Programme Name */}
             <div>
               <label className="flex items-center space-x-2 mb-3 text-sm font-semibold text-gray-700">
                 <BookOpen className="w-4 h-4 text-green-600" />
@@ -168,7 +122,6 @@ export default function AddOrEditProgrammePage() {
               />
             </div>
 
-            {/* Programme Description */}
             <div>
               <label className="flex items-center space-x-2 mb-3 text-sm font-semibold text-gray-700">
                 <Hash className="w-4 h-4 text-green-600" />
@@ -177,34 +130,11 @@ export default function AddOrEditProgrammePage() {
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                required
                 placeholder="Enter programme description"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent placeholder-gray-400 font-mono transition-all duration-200 resize-none"
               />
             </div>
 
-            {/* Department */}
-            <div>
-              <label className="flex items-center space-x-2 mb-3 text-sm font-semibold text-gray-700">
-                <Building className="w-4 h-4 text-green-600" />
-                <span>Department</span>
-              </label>
-              <select
-                value={department}
-                onChange={(e) => setDepartment(e.target.value)}
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white transition-all duration-200"
-              >
-                <option value="">Select a department</option>
-                {departments.map((dept) => (
-                  <option key={dept.id} value={dept.name}>
-                    {dept.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Duration / Category */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
                 <label className="flex items-center space-x-2 mb-3 text-sm font-semibold text-gray-700">
@@ -237,8 +167,6 @@ export default function AddOrEditProgrammePage() {
               </div>
             </div>
 
-            {/* Programme Level */}
-            {/* Submit Button */}
             <div className="mt-8 pt-6 border-t border-gray-100">
               <button
                 type="submit"
@@ -259,16 +187,6 @@ export default function AddOrEditProgrammePage() {
               </button>
             </div>
           </form>
-        </div>
-
-        {/* Tips */}
-        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h3 className="font-semibold text-blue-800 mb-2">Quick Tips:</h3>
-          <ul className="text-sm text-blue-700 space-y-1">
-            <li>• Programme name and description should be clear and specific</li>
-            <li>• Duration format: “3 years”, “2 semesters”, etc.</li>
-            <li>• Level examples: ODL, Masters, PhD</li>
-          </ul>
         </div>
       </div>
     </div>
